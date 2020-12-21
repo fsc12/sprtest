@@ -1,22 +1,17 @@
 package de.fsc.sprint.sprtest.controller;
 
 import de.fsc.sprint.sprtest.model.WeatherForm;
-import de.fsc.sprint.sprtest.services.BrokerService;
-import de.fsc.sprint.sprtest.services.WeatherService;
+import de.fsc.sprint.sprtest.services.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * allg. Controller
@@ -25,15 +20,16 @@ import java.util.Map;
 @Slf4j
 class CiCdController extends AbstractController {
 
-    @Autowired
-    private WeatherService weatherService;
-    @Autowired
-    private BrokerService brokerService;
+    private final WeatherService weatherService;
+    private final BrokerService brokerService;
 
-    private String component;
+    public CiCdController(WeatherService weatherService, BrokerService brokerService) {
+        this.weatherService = weatherService;
+        this.brokerService = brokerService;
+    }
 
     @GetMapping("/")
-    public String weatherRoot(Model model) {
+    public String weatherRoot() {
         return "index";
     }
 
@@ -45,10 +41,13 @@ class CiCdController extends AbstractController {
 
     @GetMapping("/calc")
     public String calc(Model model) {
-        Map<String, List<Double>> weatherMap = weatherService.calc();
+        brokerService.sendMessage("------------------------", Collections.emptyList());
+//        Map<String, List<Double>> weatherMap = weatherService.calc();
+        Map<String, List<Double>> weatherMap = weatherService.calc2();
         for (String city : weatherMap.keySet()) {
             brokerService.sendMessage(city, weatherMap.get(city));
         }
+        brokerService.sendMessage("------------------------", Collections.emptyList());
         model.addAttribute("weatherForm", new WeatherForm());
         return "index";
     }
@@ -56,7 +55,6 @@ class CiCdController extends AbstractController {
     @PostMapping("/cicd")
     public String submit(@Valid @ModelAttribute("weatherForm") WeatherForm cForm, BindingResult bindingresult, Model model) {
         model.addAttribute("weatherForm", cForm);
-        model.addAttribute("component", this.component);
         if (bindingresult.hasErrors()) {
             return "index";
         }
@@ -64,6 +62,9 @@ class CiCdController extends AbstractController {
         return "index";
     }
 
+    /**
+     * @return User
+     */
     private String getPrincipal() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserDetails) {
