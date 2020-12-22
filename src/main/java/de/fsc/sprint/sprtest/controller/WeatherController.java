@@ -18,12 +18,12 @@ import java.util.*;
  */
 @Controller
 @Slf4j
-class CiCdController extends AbstractController {
+class WeatherController extends AbstractController {
 
     private final WeatherService weatherService;
     private final BrokerService brokerService;
 
-    public CiCdController(WeatherService weatherService, BrokerService brokerService) {
+    public WeatherController(WeatherService weatherService, BrokerService brokerService) {
         this.weatherService = weatherService;
         this.brokerService = brokerService;
     }
@@ -52,7 +52,7 @@ class CiCdController extends AbstractController {
         return "index";
     }
 
-    @PostMapping("/cicd")
+    @PostMapping("/calc")
     public String submit(@Valid @ModelAttribute("weatherForm") WeatherForm cForm, BindingResult bindingresult, Model model) {
         model.addAttribute("weatherForm", cForm);
         if (bindingresult.hasErrors()) {
